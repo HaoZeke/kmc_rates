@@ -47,10 +47,10 @@ class KineticMonteCarlo(object):
         self.debug = debug
     
     def next(self, u):
-        udata = self.graph.node[u]
+        udata = self.graph.nodes[u]
         
         transition_probabilities = dict()
-        for x, v, uvdata in self.graph.edges_iter(u, data=True):
+        for x, v, uvdata in self.graph.edges(u, data=True):
             assert u == x
             kuv = uvdata["P"]
             transition_probabilities[v] = kuv

@@ -59,7 +59,7 @@ def kmcgraph_from_rates(rates):
     # add edges to rate graph and assign transition probabilities
     for edge, rate in rates.items():
         u, v = edge
-        tau_u = graph.node[u]["tau"]
+        tau_u = graph.nodes[u]["tau"]
         Puv =  rate * tau_u
         graph.add_edge(u, v, P=Puv)
     
@@ -177,7 +177,7 @@ class GraphReduction(object):
     def get_rate_AB_SS(self):
         rate = 0.
         for a in self.A:
-            PaB = sum((data["P"] for x, b, data in self.graph.out_edges_iter(a, data=True)
+            PaB = sum((data["P"] for x, b, data in self.graph.out_edges(a, data=True)
                        if b in self.B
                        ))
             rate += PaB * self.weights[a] / self._initial_tau[a]
@@ -226,7 +226,7 @@ class GraphReduction(object):
         for a in self._reduce_all_iterator(group):
             if self.graph.out_degree(a) <= 1:
                 raise Exception("node %s is not connected" % (a))
-            adata = self.graph.node[a]
+            adata = self.graph.nodes[a]
             # in the paper, to avoid numerical errors DJW computes 
             # 1-Pxx as sum_j Pxj if Pxx > .99
             Paa = self._get_edge_data(a, a)["P"]
@@ -314,7 +314,7 @@ class GraphReduction(object):
         """
         assert x != u
         
-        udata = self.graph.node[u]
+        udata = self.graph.nodes[u]
 
         Pux = self._get_edge_data(u, x)["P"]
         
@@ -333,7 +333,7 @@ class GraphReduction(object):
         """
         neibs = set(self.graph.successors(x) + self.graph.predecessors(x))
         neibs.remove(x)
-        tau_x = self.graph.node[x]["tau"]
+        tau_x = self.graph.nodes[x]["tau"]
         # in the paper, to avoid numerical errors DJW computes 
         # 1-Pxx as sum_j Pxj if Pxx > .99         
         Pxx = self._get_edge_data(x, x)["P"]
@@ -356,12 +356,12 @@ class GraphReduction(object):
 
     def _print_node_data(self, u):
         print("data from node x =", u)
-        udata = self.graph.node[u]  
+        udata = self.graph.nodes[u]  
 #        print "checking node", u
         print("  taux",  udata["tau"])
 
         total_prob = 0.
-        for x, v, uvdata in self.graph.out_edges_iter(u, data=True):
+        for x, v, uvdata in self.graph.out_edges(u, data=True):
             Puv = uvdata["P"]
             print("  Pxv", Puv, ": v =", v)
             total_prob += Puv
@@ -369,12 +369,12 @@ class GraphReduction(object):
         print("  total prob", total_prob)
 
     def _check_node(self, u, verbose=True):
-        udata = self.graph.node[u]  
+        udata = self.graph.nodes[u]  
 #        print "checking node", u
         assert udata["tau"] >= 0
 
         total_prob = 0.
-        for x, v, uvdata in self.graph.out_edges_iter(u, data=True):
+        for x, v, uvdata in self.graph.out_edges(u, data=True):
             Puv = uvdata["P"]
             assert 1 >= Puv >= 0
             total_prob += Puv
@@ -467,10 +467,10 @@ class GraphReduction(object):
 
     def _get_committor_probability(self, x):
         PxA = sum([data["P"] for (u, v, data) in 
-                      self.graph.out_edges_iter([x], data=True) if v in self.A
+                      self.graph.out_edges([x], data=True) if v in self.A
                       ])
         PxB = sum([data["P"] for (u, v, data) in 
-                      self.graph.out_edges_iter([x], data=True) if v in self.B
+                      self.graph.out_edges([x], data=True) if v in self.B
                       ])
         
         # These will not necessarily sum to 1 because of the self transition probabilities,
