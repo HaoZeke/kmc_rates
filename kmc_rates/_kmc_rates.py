@@ -307,17 +307,24 @@ class GraphReduction(object):
     def _update_node(self, u, x, tau_x, Pxx):
         """
         update the waiting time and Puu for node u upon removing node x
-        
+
         tauu -> tauu + Pux * taux / (1-Pxx)
-        
+
         Puu -> Puu + Pux * Pxu / (1-Pxx)
         """
         assert x != u
-        
+
         udata = self.graph.nodes[u]
 
-        Pux = self._get_edge_data(u, x)["P"]
-        
+        # _remove_node feeds us every neighbour of x (successors U
+        # predecessors). A pure successor (edge x -> u but not u -> x)
+        # has no P_ux, so the tau update is a no-op and the edge
+        # lookup would raise. Short-circuit on that case.
+        try:
+            Pux = self._get_edge_data(u, x)["P"]
+        except KeyError:
+            return
+
         if self.debug:
             tauold = udata["tau"]
 
