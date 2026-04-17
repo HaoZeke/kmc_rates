@@ -2,7 +2,7 @@
 methods for preconditioning the rate matrix to improve the performance 
 of the linear algebra solvers
 """
-from itertools import izip
+
 
 import numpy as np
 import networkx as nx
@@ -15,17 +15,17 @@ class MSTSpectralDecomposition(object):
         self.Eij = Eij
         self.T = T
         
-        self.sorted_indices = sorted(((E, i) for i, E in self.Ei.iteritems()))
-        print self.sorted_indices
+        self.sorted_indices = sorted(((E, i) for i, E in self.Ei.items()))
+        print(self.sorted_indices)
         self.sorted_indices = [i for E, i in self.sorted_indices]
         
         self.run()
 
     def compute_mst(self):
         self.graph = nx.Graph()
-        for i, E in self.Ei.iteritems():
+        for i, E in self.Ei.items():
             self.graph.add_node(i, E=E)
-        for (i, j), E in self.Eij.iteritems():
+        for (i, j), E in self.Eij.items():
             self.graph.add_edge(i, j, E=E)
         self.mst = nx.minimum_spanning_tree(self.graph, weight='E')
         return self.mst
@@ -51,7 +51,7 @@ class MSTSpectralDecomposition(object):
         unew = dict()
         vnew = dict()
         self.find_u(mst, s, unew, vnew)
-        for i, unewi in unew.iteritems():
+        for i, unewi in unew.items():
             if unewi < u[i]:
                 u[i] = unewi
             v[i] = min(v[i], u[i] - self.Ei[i])
@@ -65,14 +65,14 @@ class MSTSpectralDecomposition(object):
                 s2 = child
                 break
         if s2 is None:
-            print nx.connected_components(mst)
+            print(nx.connected_components(mst))
         assert s2 is not None
         return s2
     
     def find_cutting_edge(self, mst, s1, u):
         u1 = u[s1]
         for parent, child in nx.bfs_edges(mst, s1):
-            print "u[parent], u[child]", s1, ":", parent, child, u[parent], u[child], u1
+            print("u[parent], u[child]", s1, ":", parent, child, u[parent], u[child], u1)
             if u[child] < u1:
                 assert u[parent] == u1
                 i, j = child, parent
@@ -81,7 +81,7 @@ class MSTSpectralDecomposition(object):
 #        path = nx.shortest_path(mst, s1, s2)
 #        print "path", path
 #        E, i, j = max( [(self.get_edge_energy(i,j), i, j) for i, j in izip(path, path[1:])] )
-        print "cutting edge", i, j, E
+        print("cutting edge", i, j, E)
         return E, i, j
     
     def compute_kth_eigenvector_components(self, mst, s):
@@ -92,19 +92,19 @@ class MSTSpectralDecomposition(object):
         return evec
     
     def matricize_eigenvectors(self, evecs):
-        nodes = sorted(self.Ei.iterkeys())
+        nodes = sorted(self.Ei.keys())
         node2index = dict(((n, i) for i, n in enumerate(nodes)))
         eigenvectors = np.zeros([len(nodes), len(nodes)])
         eigenvectors[:,0] = 1.
-        for k, evec in evecs.iteritems():
-            for node, v in evec.iteritems():
+        for k, evec in evecs.items():
+            for node, v in evec.items():
                 i = node2index[node]
                 eigenvectors[i,k] = v
         return eigenvectors
     
     def run(self):
         mst = self.compute_mst()
-        print self.mst.number_of_edges()
+        print(self.mst.number_of_edges())
         
         u = dict()
         v = dict()
@@ -119,30 +119,30 @@ class MSTSpectralDecomposition(object):
         v[s1] = 0.
         
         self.find_u(mst, s1, u, v)
-        for i, ui in u.iteritems():
-            print "u v", i, u, v[i]
+        for i, ui in u.items():
+            print("u v", i, u, v[i])
             
-        for k in xrange(1, len(self.Ei)):
-            print ""
+        for k in range(1, len(self.Ei)):
+            print("")
             # find the next sink
-            s = max(v.iterkeys(), key=lambda i:v[i])
+            s = max(iter(v.keys()), key=lambda i:v[i])
 #            sold = slist[-1]
 #            print slist
-            print "current sink", s
-            print "past sinks", sinks
-            print "# edges", mst.number_of_edges(), mst.number_of_edges(s)
+            print("current sink", s)
+            print("past sinks", sinks)
+            print("# edges", mst.number_of_edges(), mst.number_of_edges(s))
             
             if True:
                 s2 = self.get_connected_sink(mst, s, u)
             
-            for i, ui in u.iteritems(): print "  u[",i,"] = ", ui
+            for i, ui in u.items(): print("  u[",i,"] = ", ui)
             
             # find the new cutting edge
             Epq, p, q = self.find_cutting_edge(mst, s, u)
-            print "p q Epq", p, q, Epq
-            print "s Es   ", s, self.Ei[s], "sold Esold", s2, self.Ei[s2] 
-            print "eval", "exp(-(", Epq, "-", self.Ei[s], ")/", self.T, ") = ", 
-            print np.exp(-(Epq - self.Ei[s]) / self.T)
+            print("p q Epq", p, q, Epq)
+            print("s Es   ", s, self.Ei[s], "sold Esold", s2, self.Ei[s2]) 
+            print("eval", "exp(-(", Epq, "-", self.Ei[s], ")/", self.T, ") = ", end=' ') 
+            print(np.exp(-(Epq - self.Ei[s]) / self.T))
             
             # save the eigenvalue deltas
             delta[k] = Epq - self.Ei[s]
@@ -152,7 +152,7 @@ class MSTSpectralDecomposition(object):
             
             # Sk
             evecs[k] = self.compute_kth_eigenvector_components(mst, s)
-            print "evecs[",k,"] = ", evecs[k]
+            print("evecs[",k,"] = ", evecs[k])
             
             # recompute u and v
             self.recompute_uv(mst, s, u, v)
@@ -160,15 +160,15 @@ class MSTSpectralDecomposition(object):
             sinks.add(s)
         
         # process eigenvalues
-        print delta
+        print(delta)
 #        evals = np.cumsum(delta)
         self.eigenvalues = np.exp(-delta / self.T)
         self.eigenvalues[0] = 0.
-        print "eigenvalues", self.eigenvalues
+        print("eigenvalues", self.eigenvalues)
         
         # process eigenvectors
         self.eigenvectors = self.matricize_eigenvectors(evecs)
-        print self.eigenvectors
+        print(self.eigenvectors)
         
         
 
@@ -212,18 +212,18 @@ def test1():
 def make_random_energies_complete(nnodes):
     Ei = {}
     Eij = {}
-    for i in xrange(nnodes):
+    for i in range(nnodes):
         Ei[i] = np.random.uniform(-1,1)
-    for i in xrange(nnodes):
-        for j in xrange(i):
+    for i in range(nnodes):
+        for j in range(i):
             Eij[(j,i)] = max(Ei[i], Ei[j]) + np.random.uniform(.1, 1)
     return Ei, Eij 
 
 def make_rate_matrix(Ei, Eij, T=.05):
     n = len(Ei)
     m = np.zeros([n,n])
-    for i in xrange(n):
-        for j in xrange(n):
+    for i in range(n):
+        for j in range(n):
             if i == j: continue
             try:
                 Ets = Eij[(i,j)]
@@ -234,7 +234,7 @@ def make_rate_matrix(Ei, Eij, T=.05):
                     # there is no edge i,j
                     continue
             m[i,j] = np.exp(-(Ets - Ei[i])/T)
-    for i in xrange(n):
+    for i in range(n):
         m[i,i] = - m[i,:].sum()
     return m
 
@@ -243,16 +243,16 @@ def get_eigs(Ei, Eij, T=0.05):
     m = make_rate_matrix(Ei, Eij, T=T)
     lam, v = np.linalg.eig(m)
     lam, v = sort_eigs(lam, v)
-    print "exact eigenvalues", sorted(-lam)
-    print "exact eigenvectors"
-    print v
+    print("exact eigenvalues", sorted(-lam))
+    print("exact eigenvectors")
+    print(v)
 #    print v
 
 def test2():
     np.random.seed(0)
     Ei, Eij = make_random_energies_complete(4)
-    print Ei.items()
-    print Eij.items()
+    print(list(Ei.items()))
+    print(list(Eij.items()))
     T = .02
     spect = MSTSpectralDecomposition(Ei, Eij, T=T)
     

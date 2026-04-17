@@ -1,5 +1,5 @@
 import unittest
-from test_graph_transformation import _three_state_rates, _MakeRandomGraph
+from .test_graph_transformation import _three_state_rates, _MakeRandomGraph
 
 from kmc_rates.rates_linalg import CommittorLinalg, MfptLinalgSparse, TwoStateRates
 
@@ -17,7 +17,7 @@ class TestLinalg3(unittest.TestCase):
         
         reducer.compute_committors()
         rAB_ss = reducer.get_rate_AB_SS()
-        print "kSS", rAB_ss
+        print("kSS", rAB_ss)
         self.assertAlmostEqual(rAB_ss, 1.5, 7)
         
     def test01(self):
@@ -58,10 +58,10 @@ class TestLinalgRandom(unittest.TestCase):
 #         rates[(nnodes, nnodes+1)] = 1.
 #         rates[(nnodes+1, nnodes)] = 1.
         
-        for a in xrange(nnodes-1):
+        for a in range(nnodes-1):
             calc = MfptLinalgSparse(rates, [a])
             times = calc.compute_mfpt()
-            self.assertGreater(min(times.itervalues()), 0)
+            self.assertGreater(min(times.values()), 0)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from itertools import izip
+
 
 import numpy as np
 import networkx as nx
@@ -52,7 +52,7 @@ class RatesFromPathsampleDB(object):
         assert m1_indices.size == m2_indices.size == log_kuv_list.size == log_kvu_list.size
         
         
-        for u, v, log_kuv, log_kvu in izip(m1_indices, m2_indices, 
+        for u, v, log_kuv, log_kvu in zip(m1_indices, m2_indices, 
                                            log_kuv_list, log_kvu_list):
             if u == v:
                 # don't add transition states from a minimum to itself
@@ -64,26 +64,26 @@ class RatesFromPathsampleDB(object):
                 log_rates[(u,v)] = log_kuv
                 log_rates[(v,u)] = log_kvu
         
-        rates = dict(( (uv,np.exp(k)) for uv, k in log_rates.iteritems() ))
+        rates = dict(( (uv,np.exp(k)) for uv, k in log_rates.items() ))
         return rates
                 
     
     def run(self, mindataf, tsdataf):
         # mindata format
         # energy fvib pgorder I1 I2 I3
-        print "reading minima data from file:", mindataf
+        print("reading minima data from file:", mindataf)
         mindata = np.genfromtxt(mindataf, usecols=[0,1,2])
         
         # tsdata format
         # energy fvib pgorder min1 min2 I1 I2 I3
-        print "reading transition state data from file:", tsdataf
+        print("reading transition state data from file:", tsdataf)
         tsdata = np.genfromtxt(tsdataf, usecols=[0,1,2,3,4])
         
         # subtract 1 so that the indexing starts from 0
         m1_indices = tsdata[:,3].astype(int) - 1
         m2_indices = tsdata[:,4].astype(int) - 1
         
-        print "computing rate constants"
+        print("computing rate constants")
         log_k12 = self.compute_rates(mindata, tsdata, m1_indices)
         log_k21 = self.compute_rates(mindata, tsdata, m2_indices)
 
@@ -96,10 +96,10 @@ class RatesFromPathsampleDB(object):
         self.rate_constants = self.make_rates_dict(m1_indices, m2_indices, log_k12, log_k21)
         # add 1 to all the minima id's so that it corresponds to the pathsample indexing
         self.rate_constants = dict(( ((u+1, v+1), rate) for (u,v), rate
-                                     in self.rate_constants .iteritems()
+                                     in self.rate_constants.items()
                                     ))
         
-        print "computing equilibrium occupation probabilities"
+        print("computing equilibrium occupation probabilities")
         log_Peq = self._log_equilibrium_occupation_probabilities(mindata)
         Peq = np.exp(log_Peq - log_Peq.max())
         # add 1 to all the minima id's so that it corresponds to the pathsample indexing
@@ -108,27 +108,27 @@ class RatesFromPathsampleDB(object):
 
 def _check_AB(connected_components, A, AB="A"):
     Aclist = [A.intersection(c) for c in connected_components]
-    Aclist = filter(lambda c:len(c)>0, Aclist)
+    Aclist = [c for c in Aclist if len(c)>0]
     Aconn = set()
     for c in Aclist: Aconn.update(c)
     if Aconn != A:
-        print "the following", AB, "nodes are not connected at all"
-        print [m for m in A - Aconn]
+        print("the following", AB, "nodes are not connected at all")
+        print([m for m in A - Aconn])
     if len(Aclist) > 1:
-        print "the following groups of", AB, "minima are connected within the group but not between groups"
+        print("the following groups of", AB, "minima are connected within the group but not between groups")
         for c in Aclist:
-            print len(c), "minima:", [m for m in c]
+            print(len(c), "minima:", [m for m in c])
 
 def analyze_graph_error(rates, A, B):
     A = set(A)
     B = set(B)
     
     if A.intersection(B):
-        print "the following minima are in both A and B"
-        print [m for m in A.intersection(B)]
+        print("the following minima are in both A and B")
+        print([m for m in A.intersection(B)])
     
     graph = nx.Graph()
-    graph.add_edges_from(rates.iterkeys())
+    graph.add_edges_from(iter(rates.keys()))
     
     # remove nodes not connected to B
     # TODO: this only works if B is fully connected
@@ -147,10 +147,10 @@ def read_minA(fname):
                 nminima = int(line.split()[0])
             else:
                 sline = line.split()
-                ids += map(int, sline)
+                ids += list(map(int, sline))
     
     assert nminima == len(ids)
-    print len(ids), "minima read from file:", fname
+    print(len(ids), "minima read from file:", fname)
     return ids
 
 def make_rates(directory, T):
