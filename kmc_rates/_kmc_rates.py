@@ -331,7 +331,7 @@ class GraphReduction(object):
         """
         remove node x from the graph and update the neighbors of x
         """
-        neibs = set(self.graph.successors(x) + self.graph.predecessors(x))
+        neibs = set(self.graph.successors(x)) | set(self.graph.predecessors(x))
         neibs.remove(x)
         tau_x = self.graph.nodes[x]["tau"]
         # in the paper, to avoid numerical errors DJW computes 
